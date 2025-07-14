@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebRTC Video Chat</title>
+  <style>
+    video { width: 45%; margin: 5px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h2>WebRTC 1-on-1 Video Call</h2>
+  <video id="local" autoplay muted playsinline></video>
+  <video id="remote" autoplay playsinline></video>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
