@@ -45,6 +45,10 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
     socket.broadcast.emit('leave', socket.id);
   });
+
+  socket.on('leave', (targetId) => {
+    socket.to(targetId).emit('leave', socket.id);
+  });
 });
 
 const PORT = process.env.PORT || 3000;

@@ -36,12 +36,14 @@ socket.emit('join-room', roomId);
 
 socket.on('peer', async (id) => {
   peerId = id;
-  peerConnection = new RTCPeerConnection(config);
 
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
+
+  peerConnection = new RTCPeerConnection(config);
+
 
   localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, localStream);
@@ -98,6 +100,7 @@ socket.on('leave', (id) => {
     remoteVideo.srcObject = null;
     statusDiv.textContent = 'Peer disconnected';
     alert("The other person has left the call.");
+    socket.emit('leave', peerId);
   }
 });
 
