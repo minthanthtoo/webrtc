@@ -1,53 +1,12 @@
 const previewAllowed = localStorage.getItem('previewAllowed') === 'true';
 if (!previewAllowed) {
   alert('Please join from the lobby first.');
-  window.location.href = '/login.html'; // or /room/abc
+  window.location.href = '/login.html';
 }
 
 const role = localStorage.getItem('role') || 'guest';
 const roomId = localStorage.getItem('roomId') || 'room-default';
-
-document.addEventListener('DOMContentLoaded', () => {
-  const roleLabel = document.getElementById('roleLabel');
-  if (roleLabel) {
-    roleLabel.textContent = `You are a ${role.toUpperCase()}`;
-  }
-
-  const muteBtn = document.createElement('button');
-  muteBtn.textContent = 'Toggle Mic';
-  document.body.appendChild(muteBtn);
-
-  const camBtn = document.createElement('button');
-  camBtn.textContent = 'Toggle Video';
-  document.body.appendChild(camBtn);
-
-  muteBtn.onclick = () => {
-    if (!localStream) return alert('Camera/mic not ready yet');
-    const track = localStream.getAudioTracks()[0];
-    track.enabled = !track.enabled;
-    socket.emit('media-toggle', {
-      target: peerId,
-      kind: 'mic',
-      enabled: track.enabled
-    });
-  };
-
-  camBtn.onclick = () => {
-    if (!localStream) return alert('Camera/mic not ready yet');
-    const track = localStream.getVideoTracks()[0];
-    track.enabled = !track.enabled;
-    socket.emit('media-toggle', {
-      target: peerId,
-      kind: 'video',
-      enabled: track.enabled
-    });
-  };
-});
-
-// Clear previewAllowed flag when user leaves or reloads page
-window.addEventListener('beforeunload', () => {
-  localStorage.removeItem('previewAllowed');
-});
+document.getElementById('roleLabel').textContent = `You are a ${role.toUpperCase()}`;
 
 const socket = io();
 let localStream;
@@ -59,6 +18,12 @@ const config = {
 
 const localVideo = document.getElementById('local');
 const remoteVideo = document.getElementById('remote');
+const statusDiv = document.getElementById('status');
+statusDiv.textContent = 'Waiting for peer to join...';
+
+// UI Buttons
+const toggleMicBtn = document.getElementById('toggleMic');
+const toggleCamBtn = document.getElementById('toggleCam');
 
 // Join a named room
 socket.emit('join-room', roomId);
@@ -69,10 +34,14 @@ socket.emit('join-room', roomId);
   localVideo.srcObject = localStream;
 })();
 
-// Receive peer to connect
 socket.on('peer', async (id) => {
   peerId = id;
   peerConnection = new RTCPeerConnection(config);
+
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
 
   localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, localStream);
@@ -86,9 +55,10 @@ socket.on('peer', async (id) => {
 
   peerConnection.ontrack = (event) => {
     remoteVideo.srcObject = event.streams[0];
+    statusDiv.textContent = 'Call Connected!';
   };
 
-  // Only one peer sends the offer
+  // Send offer if you're the first one
   if (socket.id < peerId) {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
@@ -114,17 +84,58 @@ socket.on('signal', async ({ signal }) => {
   }
 });
 
-// Media sync events
+// Media toggle
 socket.on('media-toggle', ({ kind, enabled }) => {
-  console.log(`Remote ${kind} is now ${enabled ? 'on' : 'off'}`);
-  // TODO: Update UI icon or status here
+  const msg = `Remote ${kind} is ${enabled ? 'ON' : 'OFF'}`;
+  console.log(msg);
+  statusDiv.textContent = msg;
 });
 
-// Disconnect handling
+// Peer disconnected
 socket.on('leave', (id) => {
   if (peerId === id) {
-    alert("The other person has left the call.");
     if (peerConnection) peerConnection.close();
     remoteVideo.srcObject = null;
+    statusDiv.textContent = 'Peer disconnected';
+    alert("The other person has left the call.");
   }
+});
+
+// UI Control logic
+toggleMicBtn.onclick = () => {
+  const track = localStream?.getAudioTracks()[0];
+  if (!track) return alert("Mic not ready");
+  track.enabled = !track.enabled;
+  socket.emit('media-toggle', {
+    target: peerId,
+    kind: 'mic',
+    enabled: track.enabled
+  });
+};
+
+toggleCamBtn.onclick = () => {
+  const track = localStream?.getVideoTracks()[0];
+  if (!track) return alert("Camera not ready");
+  track.enabled = !track.enabled;
+  socket.emit('media-toggle', {
+    target: peerId,
+    kind: 'video',
+    enabled: track.enabled
+  });
+};
+
+const endBtn = document.getElementById('endCall');
+if (endBtn) {
+  endBtn.onclick = () => {
+    if (peerConnection) peerConnection.close();
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+    location.href = '/login.html';
+  };
+}
+
+// Clean up on unload
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('previewAllowed');
 });

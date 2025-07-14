@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Telemedicine Call</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 20px; }
+    video { width: 45%; border: 1px solid #ccc; margin: 10px; }
+    #controls { margin-top: 20px; }
+    button { margin: 0 10px; padding: 10px 20px; font-size: 16px; }
+    #status { margin-top: 10px; font-weight: bold; color: darkgreen; }
+  </style>
+</head>
+<body>
+  <h2 id="roleLabel">Connecting...</h2>
+  <video id="local" autoplay muted playsinline></video>
+  <video id="remote" autoplay playsinline></video>
+
+  <div id="controls">
+    <button id="toggleMic">Toggle Mic</button>
+    <button id="toggleCam">Toggle Video</button>
+    <button id="endCall">End Call</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="call.js"></script>
+</body>
+</html>
