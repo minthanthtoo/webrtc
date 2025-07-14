@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WebRTC Video Chat</title>
+  <title>Login - Telemedicine</title>
   <style>
-    video { width: 45%; margin: 5px; border: 1px solid #ccc; }
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    button { padding: 12px 24px; font-size: 18px; margin: 10px; }
   </style>
 </head>
 <body>
-  <h2>WebRTC 1-on-1 Video Call</h2>
-  <video id="local" autoplay muted playsinline></video>
-  <video id="remote" autoplay playsinline></video>
+  <h2>Select your role</h2>
+  <button onclick="joinAs('doctor')">Doctor</button>
+  <button onclick="joinAs('patient')">Patient</button>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script>
+    function joinAs(role) {
+      const roomId = 'room-123'; // Fixed for now, dynamic in next step
+      localStorage.setItem('role', role);
+      localStorage.setItem('roomId', roomId);
+      location.href = '/index.html';
+    }
+  </script>
 </body>
 </html>

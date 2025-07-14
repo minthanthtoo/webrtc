@@ -1,0 +1,13 @@
+# public/room.html
+<!DOCTYPE html>
+<html>
+<head><title>Joining Room...</title></head>
+<body>
+<script>
+  const roomMatch = window.location.pathname.match(/\/room\/(.+)/);
+  const roomId = roomMatch ? roomMatch[1] : 'default';
+  localStorage.setItem('roomId', roomId);
+  location.href = '/index.html';
+</script>
+</body>
+</html>

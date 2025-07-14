@@ -1,0 +1,53 @@
+# public/lobby.html
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Join Room</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 40px; }
+    video { width: 300px; border: 1px solid #ccc; margin-bottom: 10px; }
+    button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Prepare to Join Call</h2>
+  <video id="preview" autoplay muted playsinline></video><br>
+
+  <button id="toggleCam">Toggle Camera</button>
+  <button id="toggleMic">Toggle Mic</button><br><br>
+
+  <button id="joinBtn">Join Call</button>
+
+  <script>
+    const preview = document.getElementById('preview');
+    let localStream;
+
+    const roomMatch = window.location.pathname.match(/\/room\/(.+)/);
+    const roomId = roomMatch ? roomMatch[1] : 'default';
+    localStorage.setItem('roomId', roomId);
+
+    const init = async () => {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      preview.srcObject = localStream;
+    };
+
+    document.getElementById('toggleCam').onclick = () => {
+      const videoTrack = localStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
+    };
+
+    document.getElementById('toggleMic').onclick = () => {
+      const audioTrack = localStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+    };
+
+    document.getElementById('joinBtn').onclick = () => {
+      localStorage.setItem('previewAllowed', 'true');
+      location.href = '/index.html';
+    };
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,3 +1,14 @@
+const previewAllowed = localStorage.getItem('previewAllowed') === 'true';
+if (!previewAllowed) {
+  alert('Please join from the lobby first.');
+  window.location.href = '/login.html'; // or /room/abc
+}
+
+
+const role = localStorage.getItem('role') || 'guest';
+const roomId = localStorage.getItem('roomId') || 'room-default';
+document.getElementById('roleLabel').textContent = `You are a ${role.toUpperCase()}`;
+
 const socket = io();
 let localStream;
 let peerConnection;
@@ -10,7 +21,7 @@ const localVideo = document.getElementById('local');
 const remoteVideo = document.getElementById('remote');
 
 // Join a named room
-const roomId = "room-123"; // Replace with dynamic ID later
+//const roomId = "room-123"; // Replace with dynamic ID later
 socket.emit('join-room', roomId);
 
 // Get camera/mic
