@@ -109,6 +109,7 @@ toggleMicBtn.onclick = () => {
   const track = localStream?.getAudioTracks()[0];
   if (!track) return alert("Mic not ready");
   track.enabled = !track.enabled;
+  toggleMicBtn.classList.toggle('active', !track.enabled); // update icon color
   socket.emit('media-toggle', {
     target: peerId,
     kind: 'mic',
@@ -120,6 +121,7 @@ toggleCamBtn.onclick = () => {
   const track = localStream?.getVideoTracks()[0];
   if (!track) return alert("Camera not ready");
   track.enabled = !track.enabled;
+  toggleCamBtn.classList.toggle('active', !track.enabled); // update icon color
   socket.emit('media-toggle', {
     target: peerId,
     kind: 'video',
