@@ -1,1 +1,7 @@
 node_modules/
+logs/*.log
+logs/
+ssl/server.key
+ssl/server.crt
+node_modules/
+.DS_Store

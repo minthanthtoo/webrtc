@@ -1,75 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Telemedicine Call</title>
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 20px; }
-    video { width: 45%; border: 1px solid #ccc; margin: 10px; }
-    #controls { margin-top: 20px; }
-    button { margin: 0 10px; padding: 10px 20px; font-size: 16px; }
-    #status { margin-top: 10px; font-weight: bold; color: darkgreen; }
-
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 20px 0 0 0;
+      background: #000;
+      color: white;
+    }
+    #videoContainer {
+      position: relative;
+      width: 100vw;
+      height: 80vh;
+      background: black;
+      overflow: hidden;
+    }
+    #remote {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: black;
+    }
+    #local {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 200px;
+      height: 120px;
+      border: 2px solid white;
+      border-radius: 8px;
+      object-fit: cover;
+      z-index: 10;
+      background: black;
+    }
+    #controls {
+      margin-top: 10px;
+      position: relative;
+      z-index: 20;
+    }
     .control-btn {
-      background-color: #f4f4f4;
+      background-color: #222;
       border: none;
       border-radius: 12px;
       padding: 12px;
       margin: 0 10px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
     }
     .control-btn svg {
-      fill: #333;
+      fill: white;
+      width: 24px;
+      height: 24px;
+      transition: fill 0.3s ease;
     }
     .control-btn.active svg {
-      fill: #e53935;
+      fill: #e53935; /* red for active = enabled */
     }
-    .control-btn:hover {
-      background-color: #ddd;
+    .control-btn.disabled svg {
+      fill: #888;
+    }
+    .control-btn.disabled::after {
+      content: '✖';
+      position: absolute;
+      color: #e53935;
+      font-weight: bold;
+      font-size: 24px;
+      pointer-events: none;
+      transform: translate(8px, -8px);
+    }
+    .control-btn:hover:not(.disabled) {
+      background-color: #444;
     }
     .control-btn.end {
-      background-color: #ffdddd;
+      background-color: #b71c1c;
     }
     .control-btn.end:hover {
-      background-color: #ffcccc;
+      background-color: #d32f2f;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #76ff03;
     }
   </style>
-  <style>
-  #videoContainer {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: black;
-    overflow: hidden;
-  }
-
-  #remote {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: black;
-  }
-
-  #local {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    width: 200px;
-    height: 120px;
-    border: 2px solid white;
-    border-radius: 8px;
-    object-fit: cover;
-    z-index: 10;
-    background: black;
-  }
-
-  #controls {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    z-index: 20;
-  }
-</style>
 </head>
 <body>
   <h2 id="roleLabel">Connecting...</h2>
@@ -79,14 +101,20 @@
   </div>
 
   <div id="controls">
-    <button id="toggleMic" class="control-btn" title="Toggle Mic">
-      <svg id="micIcon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9v-3h-2v3h2z" /></svg>
+    <button id="toggleMic" class="control-btn active" title="Toggle Mic" aria-pressed="true" aria-label="Toggle Microphone">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9v-3h-2v3h2z" />
+      </svg>
     </button>
-    <button id="toggleCam" class="control-btn" title="Toggle Camera">
-      <svg id="camIcon" width="24" height="24" viewBox="0 0 24 24"><path d="M17 10.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5l4 4v-11l-4 4z" /></svg>
+    <button id="toggleCam" class="control-btn active" title="Toggle Camera" aria-pressed="true" aria-label="Toggle Camera">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17 10.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5l4 4v-11l-4 4z" />
+      </svg>
     </button>
-    <button id="endCall" class="control-btn end" title="End Call">
-      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 10.5v3c0 .8.5 1.5 1.3 1.8l2.2.7c.4.1.8 0 1-.3l2.1-2.2c2 .7 4.2.7 6.2 0l2.1 2.2c.3.3.7.4 1 .3l2.2-.7c.8-.3 1.3-1 1.3-1.8v-3c0-.9-.7-1.6-1.5-1.7-5.2-.8-10.5-.8-15.7 0-.8.1-1.5.8-1.5 1.7z" /></svg>
+    <button id="endCall" class="control-btn end" title="End Call" aria-label="End Call">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 10.5v3c0 .8.5 1.5 1.3 1.8l2.2.7c.4.1.8 0 1-.3l2.1-2.2c2 .7 4.2.7 6.2 0l2.1 2.2c.3.3.7.4 1 .3l2.2-.7c.8-.3 1.3-1 1.3-1.8v-3c0-.9-.7-1.6-1.5-1.7-5.2-.8-10.5-.8-15.7 0-.8.1-1.5.8-1.5 1.7z" />
+      </svg>
     </button>
   </div>
 

@@ -25,6 +25,13 @@ statusDiv.textContent = 'Waiting for peer to join...';
 const toggleMicBtn = document.getElementById('toggleMic');
 const toggleCamBtn = document.getElementById('toggleCam');
 
+// Utility: update button class state
+function updateButtonState(button, isEnabled) {
+  button.classList.toggle('active', isEnabled);
+  button.classList.toggle('disabled', !isEnabled);
+  button.setAttribute('aria-pressed', isEnabled.toString());
+}
+
 // Join a named room
 socket.emit('join-room', roomId);
 
@@ -32,8 +39,16 @@ socket.emit('join-room', roomId);
 (async () => {
   localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   localVideo.srcObject = localStream;
+
+  // Set initial button state
+  const micTrack = localStream.getAudioTracks()[0];
+  if (micTrack) updateButtonState(toggleMicBtn, micTrack.enabled);
+
+  const camTrack = localStream.getVideoTracks()[0];
+  if (camTrack) updateButtonState(toggleCamBtn, camTrack.enabled);
 })();
 
+// Socket: on peer found
 socket.on('peer', async (id) => {
   peerId = id;
 
@@ -43,7 +58,6 @@ socket.on('peer', async (id) => {
   }
 
   peerConnection = new RTCPeerConnection(config);
-
 
   localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, localStream);
@@ -60,7 +74,7 @@ socket.on('peer', async (id) => {
     statusDiv.textContent = 'Call Connected!';
   };
 
-  // Send offer if you're the first one
+  // Send offer if first
   if (socket.id < peerId) {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
@@ -68,7 +82,7 @@ socket.on('peer', async (id) => {
   }
 });
 
-// Receive signaling data
+// Socket: signaling received
 socket.on('signal', async ({ signal }) => {
   if (!peerConnection) return;
 
@@ -86,30 +100,32 @@ socket.on('signal', async ({ signal }) => {
   }
 });
 
-// Media toggle
+// Socket: media toggle from remote
 socket.on('media-toggle', ({ kind, enabled }) => {
   const msg = `Remote ${kind} is ${enabled ? 'ON' : 'OFF'}`;
   console.log(msg);
   statusDiv.textContent = msg;
 });
 
-// Peer disconnected
+// Socket: peer disconnected
 socket.on('leave', (id) => {
   if (peerId === id) {
     if (peerConnection) peerConnection.close();
+    peerConnection = null;
     remoteVideo.srcObject = null;
     statusDiv.textContent = 'Peer disconnected';
     alert("The other person has left the call.");
-    socket.emit('leave', peerId);
   }
 });
 
-// UI Control logic
+// Button: mic toggle
 toggleMicBtn.onclick = () => {
   const track = localStream?.getAudioTracks()[0];
   if (!track) return alert("Mic not ready");
+
   track.enabled = !track.enabled;
-  toggleMicBtn.classList.toggle('active', !track.enabled); // update icon color
+  updateButtonState(toggleMicBtn, track.enabled);
+
   socket.emit('media-toggle', {
     target: peerId,
     kind: 'mic',
@@ -117,11 +133,14 @@ toggleMicBtn.onclick = () => {
   });
 };
 
+// Button: cam toggle
 toggleCamBtn.onclick = () => {
   const track = localStream?.getVideoTracks()[0];
   if (!track) return alert("Camera not ready");
+
   track.enabled = !track.enabled;
-  toggleCamBtn.classList.toggle('active', !track.enabled); // update icon color
+  updateButtonState(toggleCamBtn, track.enabled);
+
   socket.emit('media-toggle', {
     target: peerId,
     kind: 'video',
@@ -129,6 +148,7 @@ toggleCamBtn.onclick = () => {
   });
 };
 
+// Button: end call
 const endBtn = document.getElementById('endCall');
 if (endBtn) {
   endBtn.onclick = () => {
@@ -140,7 +160,7 @@ if (endBtn) {
   };
 }
 
-// Clean up on unload
+// Cleanup on unload
 window.addEventListener('beforeunload', () => {
   localStorage.removeItem('previewAllowed');
 });
