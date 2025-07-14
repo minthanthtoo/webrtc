@@ -4,10 +4,50 @@ if (!previewAllowed) {
   window.location.href = '/login.html'; // or /room/abc
 }
 
-
 const role = localStorage.getItem('role') || 'guest';
 const roomId = localStorage.getItem('roomId') || 'room-default';
-document.getElementById('roleLabel').textContent = `You are a ${role.toUpperCase()}`;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const roleLabel = document.getElementById('roleLabel');
+  if (roleLabel) {
+    roleLabel.textContent = `You are a ${role.toUpperCase()}`;
+  }
+
+  const muteBtn = document.createElement('button');
+  muteBtn.textContent = 'Toggle Mic';
+  document.body.appendChild(muteBtn);
+
+  const camBtn = document.createElement('button');
+  camBtn.textContent = 'Toggle Video';
+  document.body.appendChild(camBtn);
+
+  muteBtn.onclick = () => {
+    if (!localStream) return alert('Camera/mic not ready yet');
+    const track = localStream.getAudioTracks()[0];
+    track.enabled = !track.enabled;
+    socket.emit('media-toggle', {
+      target: peerId,
+      kind: 'mic',
+      enabled: track.enabled
+    });
+  };
+
+  camBtn.onclick = () => {
+    if (!localStream) return alert('Camera/mic not ready yet');
+    const track = localStream.getVideoTracks()[0];
+    track.enabled = !track.enabled;
+    socket.emit('media-toggle', {
+      target: peerId,
+      kind: 'video',
+      enabled: track.enabled
+    });
+  };
+});
+
+// Clear previewAllowed flag when user leaves or reloads page
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('previewAllowed');
+});
 
 const socket = io();
 let localStream;
@@ -21,7 +61,6 @@ const localVideo = document.getElementById('local');
 const remoteVideo = document.getElementById('remote');
 
 // Join a named room
-//const roomId = "room-123"; // Replace with dynamic ID later
 socket.emit('join-room', roomId);
 
 // Get camera/mic
@@ -78,7 +117,7 @@ socket.on('signal', async ({ signal }) => {
 // Media sync events
 socket.on('media-toggle', ({ kind, enabled }) => {
   console.log(`Remote ${kind} is now ${enabled ? 'on' : 'off'}`);
-  // Update UI icon if needed
+  // TODO: Update UI icon or status here
 });
 
 // Disconnect handling
@@ -88,35 +127,4 @@ socket.on('leave', (id) => {
     if (peerConnection) peerConnection.close();
     remoteVideo.srcObject = null;
   }
-});
-
-// UI controls for mic/cam toggle
-document.addEventListener('DOMContentLoaded', () => {
-  const muteBtn = document.createElement('button');
-  muteBtn.textContent = 'Toggle Mic';
-  document.body.appendChild(muteBtn);
-
-  const camBtn = document.createElement('button');
-  camBtn.textContent = 'Toggle Video';
-  document.body.appendChild(camBtn);
-
-  muteBtn.onclick = () => {
-    const track = localStream.getAudioTracks()[0];
-    track.enabled = !track.enabled;
-    socket.emit('media-toggle', {
-      target: peerId,
-      kind: 'mic',
-      enabled: track.enabled
-    });
-  };
-
-  camBtn.onclick = () => {
-    const track = localStream.getVideoTracks()[0];
-    track.enabled = !track.enabled;
-    socket.emit('media-toggle', {
-      target: peerId,
-      kind: 'video',
-      enabled: track.enabled
-    });
-  };
 });
