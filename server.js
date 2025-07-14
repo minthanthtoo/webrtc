@@ -8,8 +8,10 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join', () => {
-    const clients = Array.from(io.sockets.sockets.keys());
+  // Join a named room (e.g., doctor-patient session)
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
     const target = clients.find(id => id !== socket.id);
     if (target) {
       socket.emit('peer', target);
@@ -17,6 +19,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Relay WebRTC signaling
   socket.on('signal', (data) => {
     io.to(data.target).emit('signal', {
       sender: socket.id,
@@ -24,11 +27,21 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Sync mic/cam toggle status
+  socket.on('media-toggle', (data) => {
+    socket.to(data.target).emit('media-toggle', {
+      sender: socket.id,
+      kind: data.kind,
+      enabled: data.enabled
+    });
+  });
+
+  // Notify others on disconnect
   socket.on('disconnect', () => {
-    io.emit('leave', socket.id);
+    console.log('User disconnected:', socket.id);
+    socket.broadcast.emit('leave', socket.id);
   });
 });
 
-//http.listen(3000, () => console.log('Server running at http://localhost:3000'));
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+http.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
